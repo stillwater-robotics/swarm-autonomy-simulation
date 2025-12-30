@@ -8,36 +8,12 @@
 #define SPEED 1
 #define DIVE_TIME 5
 
-#define SIM_TIME 3
+#define SIM_TIME 10
 #define CONTROL_TIME_STEP 0.1
 #define PLAN_TIME_STEP 10*CONTROL_TIME_STEP
 
 State get_start_state(int id){
-    return State(Pose(id, id, 0, 0), Pose(0, 0, 0, 0));
-}
-
-void replan_all(std::vector<Agent> agents){
-    for (auto it=agents.begin(); it < agents.end(); ++it){
-        std::vector<State> states;
-        for (auto it2=agents.begin(); it2 < agents.end(); ++it2){
-            if (it->id == it2->id){
-                continue;
-            }
-            states.push_back(it2->ReadState());
-        }
-        it->Plan(states);
-        it->WriteDesiredState();
-        it->WriteDesiredTrajectory();
-        std::cout << "wrote replan to files" << std::endl;
-    }
-}
-
-void update_all(std::vector<Agent> agents){
-    for (auto it=agents.begin(); it < agents.end(); ++it){
-        it->Update(CONTROL_TIME_STEP);
-        it->WriteState();
-        std::cout << "wrote update to files" << std::endl;
-    }
+    return State(Pose(id*pow(-1, id), id, 0, 0), Pose(0, 0, 0, 0));
 }
 
 int main() {
@@ -54,8 +30,25 @@ int main() {
     for (float i=0; i<=SIM_TIME; i+=CONTROL_TIME_STEP){
         std::cout << "Simulation time: " << i << std::endl;
         if (fmod(i, PLAN_TIME_STEP) < CONTROL_TIME_STEP){
-            replan_all(agents);
+            // Replan all agents
+            for (auto it=agents.begin(); it < agents.end(); ++it){
+                std::vector<State> states;
+                for (auto it2=agents.begin(); it2 < agents.end(); ++it2){
+                    if (it->id == it2->id){
+                        continue;
+                    }
+                    states.push_back(it2->ReadState());
+                }
+                it->Plan(states, i);
+                it->WriteDesiredState(i);
+                it->WriteDesiredTrajectory();
+            }
         }
-        update_all(agents);
+
+        // Update all agents
+        for (auto it=agents.begin(); it < agents.end(); ++it){
+            it->Update(i);
+            it->WriteState(i);
+        }
     }
 }

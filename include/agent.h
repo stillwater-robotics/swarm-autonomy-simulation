@@ -16,7 +16,6 @@ private:
     TrajectoryGenerator trajectoryGenerator;
     Controller controller;
 
-    float time;
     float traj_time;
     Pose desired;
 
@@ -44,20 +43,20 @@ public:
      * 
      * @param states States the neighboring agents
      */
-    void Plan(std::vector<State> states); 
+    void Plan(std::vector<State> states, float time); 
 
     /**
      * @brief Updates the state of the robot
      * 
      * @param time_step Time in seconds since last update
     */
-    void Update(float time_step);
+    void Update(float time);
 
     // returns the current state of the agent
     State ReadState();
 
     // writes the agents information
-    void WriteState();
-    void WriteDesiredState();
+    void WriteState(float time);
+    void WriteDesiredState(float time);
     void WriteDesiredTrajectory();
 };

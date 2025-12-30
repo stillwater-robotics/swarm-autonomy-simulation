@@ -5,29 +5,29 @@
 #include <iostream>  // TODO REMOVE
 
 Agent::Agent(float id_, State initialState, uint32_t sim_start_, float speed, float dive_time){
-    // TODO expose
-    pointGenerator = PointGenerator(1.0f, 1.0f, 1.0f);
+    pointGenerator = PointGenerator(1.0f, 1.0f, 1000.0f);
     trajectoryGenerator = TrajectoryGenerator(speed, dive_time);
     controller = Controller();
 
     id = id_;
     currentState = initialState;
-    time = 0;
     traj_time = 0;
     desired = currentState.pose;
 
     sim_start = sim_start_;
+    std::stringstream directory;
+    directory << "sim_data_" << sim_start << "/";
+
     std::stringstream state_filename;
-    state_filename << "sim_data_" << sim_start << "_" << id << "_states.csv";
-    state_writer = Writer(state_filename.str());
+    state_filename << id << "_states.csv";
+    state_writer = Writer(directory.str() + state_filename.str());
 
     std::stringstream desired_filename;
-    desired_filename << "sim_data_" << sim_start << "_" << id << "_desired_poses.csv";
-    std::cout << desired_filename.str() << std::endl;
-    desired_state_writer = Writer(desired_filename.str());
+    desired_filename << id << "_desired_poses.csv";
+    desired_state_writer = Writer(directory.str() + desired_filename.str());
 }
 
-void Agent::Plan(std::vector<State> states){
+void Agent::Plan(std::vector<State> states, float time){
     std::vector<Pose> poses;
     for(auto it=states.begin(); it < states.end(); ++it){
         poses.push_back((*it).pose);
@@ -39,9 +39,8 @@ void Agent::Plan(std::vector<State> states){
     return;
 }
 
-void Agent::Update(float time_step){
-    controller.Update(trajectoryGenerator.GetDesiredState(time-traj_time));
-    time += time_step;
+void Agent::Update(float time){
+    currentState = controller.Update(trajectoryGenerator.GetDesiredState(time-traj_time));
     return;
 }
 
@@ -50,16 +49,19 @@ State Agent::ReadState(){
     return currentState;
 }
 
-void Agent::WriteState(){
+void Agent::WriteState(float time){
     state_writer.Write(ReadState(), time);
 }
 
-void Agent::WriteDesiredState(){
+void Agent::WriteDesiredState(float time){
     desired_state_writer.Write(desired, time);
 }
 
 void Agent::WriteDesiredTrajectory(){
+    std::stringstream directory;
+    directory << "sim_data_" << sim_start << "/" << id << "_trajectories/";
+
     std::stringstream filename;
-    filename << "sim_data_" << sim_start << "_" << id << "_trajectory_" << traj_time << ".csv";
-    WriteTrajectory(trajectoryGenerator.trajectory, filename.str(), 0.1);
+    filename << id << "_" << traj_time << ".csv";
+    WriteTrajectory(trajectoryGenerator.trajectory, directory.str() + filename.str(), 0.1);
 }
